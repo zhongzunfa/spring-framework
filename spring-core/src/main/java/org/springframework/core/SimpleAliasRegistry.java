@@ -16,15 +16,15 @@
 
 package org.springframework.core;
 
+import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
+import org.springframework.util.StringValueResolver;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
-import org.springframework.util.StringValueResolver;
 
 /**
  * Simple implementation of the {@link AliasRegistry} interface.
@@ -44,6 +44,8 @@ public class SimpleAliasRegistry implements AliasRegistry {
 	public void registerAlias(String name, String alias) {
 		Assert.hasText(name, "'name' must not be empty");
 		Assert.hasText(alias, "'alias' must not be empty");
+
+		// 如果beanName 与alias 相同的话不记录alias， 并且删除对应的alias
 		if (alias.equals(name)) {
 			this.aliasMap.remove(alias);
 		}
@@ -55,6 +57,8 @@ public class SimpleAliasRegistry implements AliasRegistry {
 							name + "': It is already registered for name '" + registeredName + "'.");
 				}
 			}
+
+			// 检查循环的alias 当A->B 存在时， 若在出现A-C-B 就会抛出异常。
 			checkForAliasCircle(name, alias);
 			this.aliasMap.put(alias, name);
 		}
