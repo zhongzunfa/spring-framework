@@ -60,6 +60,7 @@ public class SimpleAliasRegistry implements AliasRegistry {
 
 			// 检查循环的alias 当A->B 存在时， 若在出现A-C-B 就会抛出异常。
 			checkForAliasCircle(name, alias);
+			// key=别名， value = beanName
 			this.aliasMap.put(alias, name);
 		}
 	}

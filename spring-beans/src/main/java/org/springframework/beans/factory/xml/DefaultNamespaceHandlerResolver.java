@@ -16,20 +16,19 @@
 
 package org.springframework.beans.factory.xml;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.FatalBeanException;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Default implementation of the {@link NamespaceHandlerResolver} interface.
@@ -110,15 +109,22 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 	 * @return the located {@link NamespaceHandler}, or {@code null} if none found
 	 */
 	public NamespaceHandler resolve(String namespaceUri) {
+
+		// 获取所有配置的handler 映射, 该方法是一个重点内容,主要是内容的来源
 		Map<String, Object> handlerMappings = getHandlerMappings();
+
+		// 根据命名空间找到对应的NamespaceHandler
 		Object handlerOrClassName = handlerMappings.get(namespaceUri);
 		if (handlerOrClassName == null) {
 			return null;
 		}
 		else if (handlerOrClassName instanceof NamespaceHandler) {
+			// 如果是已经做过解析的NamespaceHandler 直接返回
 			return (NamespaceHandler) handlerOrClassName;
 		}
 		else {
+
+			// 没有做过解析的,则返回的是类路径
 			String className = (String) handlerOrClassName;
 			try {
 				Class<?> handlerClass = ClassUtils.forName(className, this.classLoader);
@@ -126,8 +132,14 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 					throw new FatalBeanException("Class [" + className + "] for namespace [" + namespaceUri +
 							"] does not implement the [" + NamespaceHandler.class.getName() + "] interface");
 				}
+
+				// 初始化类
 				NamespaceHandler namespaceHandler = (NamespaceHandler) BeanUtils.instantiateClass(handlerClass);
+
+				// 调用自定义的NamespaceHandler的初始化方法
 				namespaceHandler.init();
+
+				// 记录缓存
 				handlerMappings.put(namespaceUri, namespaceHandler);
 				return namespaceHandler;
 			}
@@ -146,16 +158,26 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 	 * Load the specified NamespaceHandler mappings lazily.
 	 */
 	private Map<String, Object> getHandlerMappings() {
+
+		// 如果没有缓存，则进行枷锁在缓存
 		if (this.handlerMappings == null) {
 			synchronized (this) {
 				if (this.handlerMappings == null) {
 					try {
+
+						/**
+						 * this.handlerMappingsLocation 是在构造防暑中已经初始化,
+						 * public static final String DEFAULT_HANDLER_MAPPINGS_LOCATION = "META-INF/spring.handlers";
+						 * 就是(预定义写死的路径) ： META-INF/spring.handlers
+						 */
 						Properties mappings =
 								PropertiesLoaderUtils.loadAllProperties(this.handlerMappingsLocation, this.classLoader);
 						if (logger.isDebugEnabled()) {
 							logger.debug("Loaded NamespaceHandler mappings: " + mappings);
 						}
 						Map<String, Object> handlerMappings = new ConcurrentHashMap<String, Object>(mappings.size());
+
+						// 将解析的properties 中的信息存储到handlerMappings中去
 						CollectionUtils.mergePropertiesIntoMap(mappings, handlerMappings);
 						this.handlerMappings = handlerMappings;
 					}
