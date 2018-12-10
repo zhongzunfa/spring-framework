@@ -16,15 +16,14 @@
 
 package org.springframework.beans.factory.xml;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.BeanDefinitionHolder;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Support class for implementing custom {@link NamespaceHandler NamespaceHandlers}.
@@ -70,6 +69,12 @@ public abstract class NamespaceHandlerSupport implements NamespaceHandler {
 	 * registered for that {@link Element}.
 	 */
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
+
+		/**
+		 * 寻找解析器并进行解析
+		 * findParserForElement(element, parserContext) 返回对应的BeanDefinitionParser
+		 * .parse(element, parserContext) 是进行解析。
+ 		 */
 		return findParserForElement(element, parserContext).parse(element, parserContext);
 	}
 
@@ -78,7 +83,11 @@ public abstract class NamespaceHandlerSupport implements NamespaceHandler {
 	 * the local name of the supplied {@link Element}.
 	 */
 	private BeanDefinitionParser findParserForElement(Element element, ParserContext parserContext) {
+
+		// 获取元素名称, 类似<jsf:server> , 此时localName 为server
 		String localName = parserContext.getDelegate().getLocalName(element);
+
+		// 根据server 找到对应, 也就是注册的registerBeanDefinitionParser("server", new JsfBeanDefinitionParser(...))
 		BeanDefinitionParser parser = this.parsers.get(localName);
 		if (parser == null) {
 			parserContext.getReaderContext().fatal(
